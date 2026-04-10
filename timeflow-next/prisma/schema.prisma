@@ -27,6 +27,15 @@ enum DamageCode {
   chaos
 }
 
+enum SurveyMetric {
+  focus
+  energy
+  self_control
+  creativity
+
+  @@map("survey_metric")
+}
+
 model User {
   id        String   @id @default(uuid()) @db.Uuid
   email     String   @unique
@@ -38,6 +47,7 @@ model User {
   profile Profile?
   tasks   Task[]
   sessions TimerSession[]
+  surveyResults UserSurveyResult[]
 
   @@map("users")
 }
@@ -169,5 +179,55 @@ model ReflectionNote {
   session TimerSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@map("reflection_notes")
+}
+
+model SurveyQuestion {
+  id           String       @id @default(uuid()) @db.Uuid
+  text         String
+  targetMetric SurveyMetric @map("target_metric")
+  displayOrder Int          @default(0) @map("display_order")
+  isActive     Boolean      @default(true) @map("is_active")
+  createdAt    DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  answers SurveyAnswer[]
+  results UserSurveyResult[]
+
+  @@map("survey_questions")
+}
+
+model SurveyAnswer {
+  id           String   @id @default(uuid()) @db.Uuid
+  questionId   String   @map("question_id") @db.Uuid
+  label        String
+  scoreValue   Int      @map("score_value")
+  displayOrder Int      @default(0) @map("display_order")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  question SurveyQuestion   @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  results  UserSurveyResult[]
+
+  @@index([questionId])
+  @@map("survey_answers")
+}
+
+model UserSurveyResult {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  questionId String   @map("question_id") @db.Uuid
+  answerId   String   @map("answer_id") @db.Uuid
+  completedAt DateTime @default(now()) @map("completed_at") @db.Timestamptz(6)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question SurveyQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  answer   SurveyAnswer   @relation(fields: [answerId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questionId])
+  @@index([userId])
+  @@index([questionId])
+  @@index([answerId])
+  @@map("user_survey_results")
 }
 

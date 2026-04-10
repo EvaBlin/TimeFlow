@@ -35,6 +35,12 @@ export async function completeTimerSession(input: {
   breakSeconds: number;
   finalMode: TimerMode;
 }) {
+  const existing = await prisma.timerSession.findUnique({
+    where: { id: input.sessionId },
+    select: { id: true, status: true }
+  });
+  if (!existing) throw new Error("Timer session not found");
+
   const session = await prisma.timerSession.update({
     where: { id: input.sessionId },
     data: {
@@ -54,9 +60,13 @@ export async function saveReflectionNote(input: { sessionId: string; content: st
   const trimmed = input.content.trim();
   if (!trimmed) throw new Error("Note content is empty");
 
-  const note = await prisma.reflectionNote.create({
-    data: {
+  const note = await prisma.reflectionNote.upsert({
+    where: { sessionId: input.sessionId },
+    create: {
       sessionId: input.sessionId,
+      content: trimmed
+    },
+    update: {
       content: trimmed
     },
     select: { id: true }

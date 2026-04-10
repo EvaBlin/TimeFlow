@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Clock3, Pause, Play, SquareCheck, X } from "lucide-react";
 import { completeTimerSession, createTimerSession, saveReflectionNote } from "@/app/actions/timerActions";
 
@@ -23,6 +24,21 @@ export function PomodoroTimer(props: { taskId: string }): JSX.Element {
   const [savingReflection, setSavingReflection] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
+  const [taskTitle, setTaskTitle] = useState<string>("Задача");
+
+  useEffect(() => {
+    const loadTask = async () => {
+      try {
+        const res = await fetch(`/api/v1/tasks/${props.taskId}`, { cache: "no-store" });
+        if (!res.ok) return;
+        const data = (await res.json()) as { item?: { title?: string } };
+        if (data.item?.title) setTaskTitle(data.item.title);
+      } catch {
+        // noop
+      }
+    };
+    void loadTask();
+  }, [props.taskId]);
 
   const setModeAndReset = (nextMode: TimerMode) => {
     // Чтобы не портить накопленные секунды, режим меняем только когда таймер на паузе.
@@ -97,6 +113,12 @@ export function PomodoroTimer(props: { taskId: string }): JSX.Element {
     }
   };
 
+  const resetCurrentMode = () => {
+    if (running) return;
+    setError(null);
+    setSecondsLeft(mode === "work" ? WORK_SECONDS : SHORT_BREAK_SECONDS);
+  };
+
   const finishNow = async () => {
     setError(null);
     setRunning(false);
@@ -151,9 +173,15 @@ export function PomodoroTimer(props: { taskId: string }): JSX.Element {
     <div className="min-h-screen bg-background">
       <div className="mx-auto flex max-w-6xl flex-col px-4 py-10 md:flex-row md:items-start md:gap-8">
         <div className="flex-1">
-          <header className="mb-6 flex items-center gap-3">
-            <Clock3 className="h-5 w-5 text-textMuted" />
-            <h1 className="text-lg font-semibold text-textMain">Pomodoro-таймер</h1>
+          <header className="mb-6 space-y-3">
+            <Link href="/dashboard" className="inline-flex items-center gap-2 text-sm text-textMain hover:underline">
+              <span aria-hidden>←</span>
+              Вернуться на главную
+            </Link>
+            <div className="flex items-center gap-3">
+              <Clock3 className="h-5 w-5 text-textMuted" />
+              <h1 className="text-lg font-semibold text-textMain">Pomodoro-таймер</h1>
+            </div>
           </header>
 
           <div className="rounded-2xl border border-slate-200 bg-surface p-6 shadow-card">
@@ -184,7 +212,7 @@ export function PomodoroTimer(props: { taskId: string }): JSX.Element {
                   Короткий перерыв
                 </button>
               </div>
-              <div className="text-xs text-textMuted">Связано с задачей: {props.taskId.slice(0, 6)}…</div>
+              <div className="text-xs text-textMuted">Связано с задачей: {taskTitle}</div>
             </div>
 
             <div className="flex flex-col items-center">
@@ -212,6 +240,14 @@ export function PomodoroTimer(props: { taskId: string }): JSX.Element {
                 >
                   Завершить
                 </button>
+                <button
+                  type="button"
+                  onClick={resetCurrentMode}
+                  disabled={running}
+                  className="rounded-xl border border-slate-200 bg-surface px-6 py-3 text-sm text-textMain hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Сброс
+                </button>
               </div>
             </div>
 
@@ -221,19 +257,9 @@ export function PomodoroTimer(props: { taskId: string }): JSX.Element {
               </div>
             )}
 
-            {/* Подзадачи как в макете (локально, без сохранения — можно привязать позже) */}
-            <div className="mt-10 grid gap-3 sm:grid-cols-1">
-              <div className="text-sm font-medium text-textMuted">Подзадачи</div>
-              {[
-                "Собрать данные",
-                "Создать слайды",
-                "Добавить графики"
-              ].map((label) => (
-                <label key={label} className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-surface px-4 py-3 text-sm">
-                  <input type="checkbox" className="h-4 w-4 accent-[color:#4F46E5]" />
-                  <span>{label}</span>
-                </label>
-              ))}
+            <div className="mt-10 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-textMuted">
+              Режим: {mode === "work" ? "Работа 25 минут" : "Короткий перерыв 5 минут"}.
+              После завершения цикла появится окно рефлексии, запись сохранится в историю.
             </div>
           </div>
         </div>

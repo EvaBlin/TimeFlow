@@ -1,5 +1,6 @@
 import { signOutAction } from "@/app/actions/authActions";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
+import Link from "next/link";
 
 export async function AuthHeader(): Promise<JSX.Element | null> {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY) {
@@ -20,7 +21,9 @@ export async function AuthHeader(): Promise<JSX.Element | null> {
         <div className="flex items-center gap-3">
           <div className="h-9 w-9 rounded-xl bg-slate-100" aria-hidden />
           <div className="leading-tight">
-            <div className="text-sm font-medium text-textMain">{userEmail}</div>
+            <Link href="/profile" className="text-sm font-medium text-textMain hover:underline">
+              {userEmail}
+            </Link>
             <div className="text-xs text-textMuted">Вход выполнен</div>
           </div>
         </div>

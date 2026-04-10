@@ -1,35 +1,52 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-
-const PUBLIC_PATHS = ["/", "/login", "/register"];
+// timeflow-next/middleware.ts
+import { createServerClient } from "@supabase/ssr"
+import { NextResponse, type NextRequest } from "next/server"
 
 export async function middleware(req: NextRequest) {
-  const path = req.nextUrl.pathname;
+  let res = NextResponse.next({ request: { headers: req.headers } })
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey =
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY
 
-  // 1. Пропускаем системные файлы Next.js и любые файлы с расширением (css, js, png и т.д.)
-  // Это вернет стили, так как они не будут редиректиться на /login
-  if (path.startsWith('/_next') || path.includes('.')) {
-    return NextResponse.next();
+  if (!supabaseUrl || !supabaseKey) {
+    return res
   }
 
-  // 2. Разрешаем доступ к публичным страницам
-  if (PUBLIC_PATHS.includes(path)) return NextResponse.next();
+  const supabase = createServerClient(
+    supabaseUrl,
+    supabaseKey,
+    {
+      cookies: {
+        getAll() {
+          return req.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            req.cookies.set(name, value)
+            res.cookies.set(name, value, options)
+          })
+        },
+      },
+    }
+  )
 
-  // 3. Проверка авторизации через куки
-  const hasSessionCookie =
-    req.cookies.has("sb-access-token") 
-    req.cookies.has("sb:token") ||
-    req.cookies.get("supabase-auth-token") !== undefined;
+  // This dynamically finds the correct cookie, validates the JWT, and refreshes if needed
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
 
-  if (!hasSessionCookie) {
-    const loginUrl = new URL("/login", req.url);
-    loginUrl.searchParams.set("next", path);
-    return NextResponse.redirect(loginUrl);
+  const PUBLIC_PATHS = ["/", "/login", "/register"]
+  const path = req.nextUrl.pathname
+
+  if (!PUBLIC_PATHS.includes(path) && !session) {
+    const loginUrl = new URL("/login", req.url)
+    loginUrl.searchParams.set("next", path)
+    return NextResponse.redirect(loginUrl)
   }
 
-  return NextResponse.next();
+  return res
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/profile/:path*", "/tools/:path*"]
-};
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
+}

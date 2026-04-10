@@ -3,7 +3,9 @@ import { cookies } from "next/headers";
 
 export function createSupabaseServerClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY;
+  const supabaseAnonKey =
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY;
 
   // Если ключей нет, выведем в консоль терминала инфу, но не будем крашить процесс сразу
   if (!supabaseUrl || !supabaseAnonKey) {
