@@ -1,0 +1,173 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum TaskPriority {
+  low
+  medium
+  high
+}
+
+enum TaskStatus {
+  todo
+  in_progress
+  done
+  archived
+}
+
+enum DamageCode {
+  routine
+  overload
+  chaos
+}
+
+model User {
+  id        String   @id @default(uuid()) @db.Uuid
+  email     String   @unique
+  fullName  String?  @map("full_name")
+  avatarUrl String?  @map("avatar_url")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  profile Profile?
+  tasks   Task[]
+  sessions TimerSession[]
+
+  @@map("users")
+}
+
+model Profile {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @unique @map("user_id") @db.Uuid
+  focus       Int      @map("focus_level")
+  energy      Int      @map("energy_level")
+  selfControl Int      @map("self_control_level")
+  creativity  Int      @map("creativity_level")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("profiles")
+}
+
+model DamageType {
+  id          String    @id @default(uuid()) @db.Uuid
+  code        DamageCode @unique
+  name        String
+  description String?
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  tasks Task[]
+
+  @@map("damage_types")
+}
+
+model Task {
+  id             String       @id @default(uuid()) @db.Uuid
+  userId         String       @map("user_id") @db.Uuid
+  title          String
+  description    String?
+  scheduledDate  DateTime?    @map("scheduled_date") @db.Timestamptz(6)
+  deadline       DateTime?    @db.Timestamptz(6)
+  priority       TaskPriority
+  status         TaskStatus   @default(todo)
+  damageTypeId   String       @map("damage_type_id") @db.Uuid
+  completedAt    DateTime?    @map("completed_at") @db.Timestamptz(6)
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  damageType DamageType @relation(fields: [damageTypeId], references: [id])
+
+  recommendations Recommendation[]
+  timerSessions TimerSession[]
+
+  @@index([userId])
+  @@index([damageTypeId])
+  @@map("tasks")
+}
+
+model Tool {
+  id           String   @id @default(uuid()) @db.Uuid
+  name         String   @unique
+  description  String
+  instructions String?
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  recommendations Recommendation[]
+
+  @@map("tools")
+}
+
+model Recommendation {
+  id         String   @id @default(uuid()) @db.Uuid
+  taskId     String   @map("task_id") @db.Uuid
+  toolId     String   @map("tool_id") @db.Uuid
+  score      Int
+  reasonText String   @map("reason_text")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  acceptedAt DateTime? @map("accepted_at") @db.Timestamptz(6)
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  tool Tool @relation(fields: [toolId], references: [id])
+
+  @@unique([taskId, toolId])
+  @@index([taskId])
+  @@index([toolId])
+  @@map("recommendations")
+}
+
+enum TimerMode {
+  work
+  short_break
+}
+
+enum TimerSessionStatus {
+  active
+  completed
+}
+
+model TimerSession {
+  id             String                @id @default(uuid()) @db.Uuid
+  userId         String                @map("user_id") @db.Uuid
+  taskId         String                @map("task_id") @db.Uuid
+  mode           TimerMode            @default(work)
+  status         TimerSessionStatus  @default(active) @map("status")
+
+  startedAt      DateTime             @default(now()) @map("started_at") @db.Timestamptz(6)
+  finishedAt     DateTime?            @map("finished_at") @db.Timestamptz(6)
+
+  workSeconds    Int                  @default(0) @map("work_seconds")
+  breakSeconds   Int                  @default(0) @map("break_seconds")
+  createdAt      DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task          Task                @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  reflection    ReflectionNote?
+
+  @@index([userId])
+  @@index([taskId])
+  @@map("timer_sessions")
+}
+
+model ReflectionNote {
+  id        String   @id @default(uuid()) @db.Uuid
+  sessionId String   @unique @map("session_id") @db.Uuid
+  content   String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  session TimerSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@map("reflection_notes")
+}
+

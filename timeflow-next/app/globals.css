@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  @apply bg-background text-textMain antialiased;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  @apply bg-[color:var(--background,#F8FAFC)] text-textMain antialiased;
+}
+
+body {
+  @apply font-sans;
+}
