@@ -37,8 +37,19 @@ export async function registerAction(
     }
 
     const supabase = createSupabaseServerClient();
-    const { data, error } = await supabase.auth.signUp({ email, password });
+        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ||
+                    process.env.VERCEL_URL ?
+                    `https://${process.env.VERCEL_URL}` :
+                    "https://time-flow-fgzm.vercel.app";
 
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${siteUrl}/api/auth/callback`
+      }
+    });
+    
     if (error) {
       redirect(`/register?error=${encodeURIComponent(error.message)}`);
     }
