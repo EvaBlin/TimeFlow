@@ -4,10 +4,14 @@ import { NextResponse, type NextRequest } from "next/server"
 
 export async function middleware(req: NextRequest) {
   let res = NextResponse.next({ request: { headers: req.headers } })
+  
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY
 
-  if (!supabaseUrl || !supabaseKey) return res
+  if (!supabaseUrl || !supabaseKey) {
+    console.error("Middleware: Supabase keys missing")
+    return res
+  }
 
   const supabase = createServerClient(
     supabaseUrl,
@@ -27,8 +31,7 @@ export async function middleware(req: NextRequest) {
     }
   )
 
-  // IMPORTANT: Do NOT use getSession(). Use getUser().
-  // getSession() can be spoofed as it relies on cookie data without server verification.
+  // Use getUser() for security. getSession() is less reliable.
   const { data: { user } } = await supabase.auth.getUser()
 
   const PUBLIC_PATHS = ["/", "/login", "/register", "/api/auth/callback"]
