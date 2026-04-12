@@ -20,7 +20,8 @@ export async function loginAction(formData: FormData): Promise<void> {
     }
 
     redirect("/dashboard");
-  } catch {
+  } catch(error) {
+    console.log(error);
     redirect(`/login?error=${encodeURIComponent("Сервис временно недоступен. Попробуйте еще раз.")}`);
   }
 }
@@ -49,7 +50,7 @@ export async function registerAction(
         emailRedirectTo: `${siteUrl}/api/auth/callback`
       }
     });
-    
+
     if (error) {
       redirect(`/register?error=${encodeURIComponent(error.message)}`);
     }
@@ -64,7 +65,8 @@ export async function registerAction(
     }
 
     redirect("/survey");
-  } catch {
+  } catch(error) {
+    console.log(error);
     redirect(`/register?error=${encodeURIComponent("Сервис временно недоступен. Попробуйте еще раз.")}`);
   }
 }
