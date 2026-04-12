@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { ensureAppUser, ensureDefaultTools } from "@/lib/appBootstrap";
 import { prisma } from "@/lib/prisma";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 
@@ -9,6 +10,9 @@ async function getCurrentUserId(): Promise<string | null> {
   const {
     data: { user }
   } = await supabase.auth.getUser();
+  if (user) {
+    await ensureAppUser(user);
+  }
   return user?.id ?? null;
 }
 
@@ -30,6 +34,7 @@ export async function POST(_req: Request, props: { params: Promise<{ taskId: str
   }
 
   try {
+    await ensureDefaultTools();
     const tools = await prisma.tool.findMany({ where: { isActive: true } });
     if (!tools.length) return NextResponse.json({ error: "No tools configured" }, { status: 400 });
 

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { DamageCode } from "@prisma/client";
+import { ensureAppUser } from "@/lib/appBootstrap";
 import { ensureDamageType } from "@/lib/damageTypes";
 import { prisma } from "@/lib/prisma";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
@@ -19,6 +20,9 @@ async function getCurrentUserId(): Promise<string | null> {
   const {
     data: { user }
   } = await supabase.auth.getUser();
+  if (user) {
+    await ensureAppUser(user);
+  }
   return user?.id ?? null;
 }
 

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { ensureAppUser } from "@/lib/appBootstrap";
 import { prisma } from "@/lib/prisma";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 
@@ -22,7 +23,7 @@ const clamp1to10 = (value: number): number => Math.max(1, Math.min(10, Math.roun
 
 export async function POST(req: Request) {
   try {
-    const supabase = createSupabaseServerClient();
+    const supabase = await createSupabaseServerClient();
     const {
       data: { user }
     } = await supabase.auth.getUser();
@@ -30,6 +31,8 @@ export async function POST(req: Request) {
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    await ensureAppUser(user);
 
     const body = (await req.json()) as SubmitItem[];
     if (!Array.isArray(body) || !body.length) {
@@ -122,4 +125,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }
-
