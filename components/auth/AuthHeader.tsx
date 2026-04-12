@@ -7,7 +7,7 @@ export async function AuthHeader(): Promise<JSX.Element | null> {
     return null;
   }
 
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const {
     data: { session }
   } = await supabase.auth.getSession();

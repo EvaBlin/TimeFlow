@@ -14,7 +14,7 @@ export async function loginAction(formData: FormData): Promise<void> {
     if (!email || !password) {
       redirectUrl = `/login?error=${encodeURIComponent("Введите email и пароль")}`;
     } else {
-      const supabase = createSupabaseServerClient();
+      const supabase = await createSupabaseServerClient();
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       
       if (error || !data.session) {
@@ -51,7 +51,7 @@ export async function registerAction(formData: FormData): Promise<void> {
     if (!email || !password) {
       redirectUrl = `/register?error=${encodeURIComponent("Введите email и пароль")}`;
     } else {
-      const supabase = createSupabaseServerClient();
+      const supabase = await createSupabaseServerClient();
       const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 
                       (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://time-flow-fgzm.vercel.app");
 
@@ -116,7 +116,7 @@ export async function registerAction(formData: FormData): Promise<void> {
 }
 
 export async function signOutAction(): Promise<void> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   await supabase.auth.signOut();
   redirect("/");
 }
