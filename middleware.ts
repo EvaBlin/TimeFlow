@@ -5,12 +5,9 @@ import { NextResponse, type NextRequest } from "next/server"
 export async function middleware(req: NextRequest) {
   let res = NextResponse.next({ request: { headers: req.headers } })
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseKey =
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-  if (!supabaseUrl || !supabaseKey) {
-    return res
-  }
+  if (!supabaseUrl || !supabaseKey) return res
 
   const supabase = createServerClient(
     supabaseUrl,
@@ -30,15 +27,14 @@ export async function middleware(req: NextRequest) {
     }
   )
 
-  // This dynamically finds the correct cookie, validates the JWT, and refreshes if needed
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
+  // IMPORTANT: Do NOT use getSession(). Use getUser().
+  // getSession() can be spoofed as it relies on cookie data without server verification.
+  const { data: { user } } = await supabase.auth.getUser()
 
-  const PUBLIC_PATHS = ["/", "/login", "/register"]
+  const PUBLIC_PATHS = ["/", "/login", "/register", "/api/auth/callback"]
   const path = req.nextUrl.pathname
 
-  if (!PUBLIC_PATHS.includes(path) && !session) {
+  if (!PUBLIC_PATHS.includes(path) && !user) {
     const loginUrl = new URL("/login", req.url)
     loginUrl.searchParams.set("next", path)
     return NextResponse.redirect(loginUrl)
