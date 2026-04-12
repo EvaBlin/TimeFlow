@@ -20,6 +20,42 @@ export default async function ProfilePage(): Promise<JSX.Element> {
     where: { userId: user.id }
   });
 
+  const reflections = await prisma.reflectionNote.findMany({
+    where: {
+      session: {
+        userId: user.id
+      }
+    },
+    orderBy: {
+      createdAt: "desc"
+    },
+    take: 10,
+    include: {
+      session: {
+        select: {
+          mode: true,
+          workSeconds: true,
+          breakSeconds: true,
+          finishedAt: true,
+          task: {
+            select: {
+              title: true
+            }
+          }
+        }
+      }
+    }
+  });
+
+  const formatDateTime = (value: Date | null) => {
+    if (!value) return "Без даты";
+
+    return new Intl.DateTimeFormat("ru-RU", {
+      dateStyle: "medium",
+      timeStyle: "short"
+    }).format(value);
+  };
+
   return (
     <main className="min-h-screen bg-background px-4 py-10 md:px-6">
       <div className="mx-auto max-w-3xl">
@@ -63,9 +99,37 @@ export default async function ProfilePage(): Promise<JSX.Element> {
           </div>
         )}
 
-        <div className="mt-8 rounded-2xl border border-slate-200 bg-surface p-6 text-sm text-textMuted">
-          Здесь в следующих итерациях подключим список задач, результаты и рекомендуемые инструменты.
-        </div>
+        <section className="mt-8 rounded-2xl border border-slate-200 bg-surface p-6">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-base font-semibold text-textMain">Рефлексия по сессиям</h2>
+              <p className="mt-1 text-sm text-textMuted">Сохраняем заметки из Pomodoro и тайм-боксинга прямо в профиль.</p>
+            </div>
+            <div className="text-xs text-textMuted">{reflections.length} записей</div>
+          </div>
+
+          {!reflections.length ? (
+            <div className="mt-5 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-5 text-sm text-textMuted">
+              Пока нет сохраненных заметок. Завершите таймер и добавьте рефлексию.
+            </div>
+          ) : (
+            <div className="mt-5 space-y-4">
+              {reflections.map((note) => (
+                <article key={note.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="text-sm font-medium text-textMain">{note.session.task.title}</div>
+                    <div className="text-xs text-textMuted">{formatDateTime(note.session.finishedAt ?? note.createdAt)}</div>
+                  </div>
+                  <div className="mt-2 text-xs uppercase tracking-[0.14em] text-textMuted">
+                    {note.session.mode === "work" ? "Pomodoro" : "Перерыв"} · {Math.round(note.session.workSeconds / 60)} мин работы ·{" "}
+                    {Math.round(note.session.breakSeconds / 60)} мин отдыха
+                  </div>
+                  <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-textMain">{note.content}</p>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
       </div>
     </main>
   );
