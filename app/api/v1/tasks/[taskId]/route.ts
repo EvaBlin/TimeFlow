@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { DamageCode } from "@prisma/client";
+import { ensureDamageType } from "@/lib/damageTypes";
 import { prisma } from "@/lib/prisma";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 
@@ -21,12 +23,18 @@ async function getCurrentUserId(): Promise<string | null> {
   return user?.id ?? null;
 }
 
-export async function GET(_req: Request, props: { params: { taskId: string } }) {
+async function getTaskId(props: { params: Promise<{ taskId: string }> }) {
+  const { taskId } = await props.params;
+  return taskId;
+}
+
+export async function GET(_req: Request, props: { params: Promise<{ taskId: string }> }) {
   const userId = await getCurrentUserId();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const taskId = await getTaskId(props);
 
   const task = await prisma.task.findFirst({
-    where: { id: props.params.taskId, userId },
+    where: { id: taskId, userId },
     include: { damageType: true }
   });
   if (!task) return NextResponse.json({ error: "Task not found" }, { status: 404 });
@@ -44,12 +52,13 @@ export async function GET(_req: Request, props: { params: { taskId: string } }) 
   });
 }
 
-export async function PATCH(req: Request, props: { params: { taskId: string } }) {
+export async function PATCH(req: Request, props: { params: Promise<{ taskId: string }> }) {
   const userId = await getCurrentUserId();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const taskId = await getTaskId(props);
 
   const current = await prisma.task.findFirst({
-    where: { id: props.params.taskId, userId }
+    where: { id: taskId, userId }
   });
   if (!current) return NextResponse.json({ error: "Task not found" }, { status: 404 });
 
@@ -57,13 +66,12 @@ export async function PATCH(req: Request, props: { params: { taskId: string } })
 
   let damageTypeId: string | undefined;
   if (body.damageType) {
-    const damageType = await prisma.damageType.findUnique({ where: { code: body.damageType } });
-    if (!damageType) return NextResponse.json({ error: "Invalid damage type" }, { status: 400 });
+    const damageType = await ensureDamageType(body.damageType as DamageCode);
     damageTypeId = damageType.id;
   }
 
   const task = await prisma.task.update({
-    where: { id: props.params.taskId },
+    where: { id: taskId },
     data: {
       title: body.title?.trim() || undefined,
       description: body.description === undefined ? undefined : body.description,
@@ -88,16 +96,16 @@ export async function PATCH(req: Request, props: { params: { taskId: string } })
   });
 }
 
-export async function DELETE(_req: Request, props: { params: { taskId: string } }) {
+export async function DELETE(_req: Request, props: { params: Promise<{ taskId: string }> }) {
   const userId = await getCurrentUserId();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const taskId = await getTaskId(props);
 
   const current = await prisma.task.findFirst({
-    where: { id: props.params.taskId, userId }
+    where: { id: taskId, userId }
   });
   if (!current) return NextResponse.json({ error: "Task not found" }, { status: 404 });
 
-  await prisma.task.delete({ where: { id: props.params.taskId } });
+  await prisma.task.delete({ where: { id: taskId } });
   return NextResponse.json({ success: true });
 }
-

@@ -12,12 +12,13 @@ async function getCurrentUserId(): Promise<string | null> {
   return user?.id ?? null;
 }
 
-export async function POST(_req: Request, props: { params: { taskId: string } }) {
+export async function POST(_req: Request, props: { params: Promise<{ taskId: string }> }) {
   const userId = await getCurrentUserId();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { taskId } = await props.params;
 
   const task = await prisma.task.findFirst({
-    where: { id: props.params.taskId, userId },
+    where: { id: taskId, userId },
     include: {
       user: { include: { profile: true } },
       damageType: true
@@ -100,4 +101,3 @@ export async function POST(_req: Request, props: { params: { taskId: string } })
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }
-

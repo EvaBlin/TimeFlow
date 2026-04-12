@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { DamageCode } from "@prisma/client";
+import { ensureDamageType } from "@/lib/damageTypes";
 import { prisma } from "@/lib/prisma";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 
@@ -55,12 +57,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Task title is required" }, { status: 400 });
   }
 
-  const damageType = await prisma.damageType.findUnique({
-    where: { code: body.damageType }
-  });
-  if (!damageType) {
-    return NextResponse.json({ error: "Invalid damage type" }, { status: 400 });
-  }
+  const damageType = await ensureDamageType(body.damageType as DamageCode);
 
   const task = await prisma.task.create({
     data: {
@@ -86,4 +83,3 @@ export async function POST(req: Request) {
     }
   });
 }
-
