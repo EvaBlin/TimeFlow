@@ -3,7 +3,7 @@ import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import Link from "next/link";
 
 export default async function ProfilePage(): Promise<JSX.Element> {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY) {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) {
     return (
       <main className="min-h-screen bg-background px-4 py-16">
         <p className="text-center text-sm text-textMuted">Настройте Supabase env переменные.</p>

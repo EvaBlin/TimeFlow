@@ -6,7 +6,7 @@ export async function middleware(req: NextRequest) {
   let res = NextResponse.next({ request: { headers: req.headers } })
   
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 
   if (!supabaseUrl || !supabaseKey) {
     console.error("Middleware: Supabase keys missing")
