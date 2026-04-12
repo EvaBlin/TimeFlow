@@ -1,6 +1,6 @@
 import { PomodoroTimer } from "@/components/pomodoro/PomodoroTimer";
 
-export default function PomodoroPage(props: { params: { taskId: string } }): JSX.Element {
-  return <PomodoroTimer taskId={props.params.taskId} />;
+export default async function PomodoroPage(props: { params: Promise<{ taskId: string }> }): Promise<JSX.Element> {
+  const { taskId } = await props.params;
+  return <PomodoroTimer taskId={taskId} />;
 }
-

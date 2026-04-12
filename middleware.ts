@@ -6,7 +6,10 @@ export async function middleware(req: NextRequest) {
   let res = NextResponse.next({ request: { headers: req.headers } })
   
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+  const supabaseKey =
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY
 
   if (!supabaseUrl || !supabaseKey) {
     console.error("Middleware: Supabase keys missing")
@@ -34,7 +37,7 @@ export async function middleware(req: NextRequest) {
   // Use getUser() for security. getSession() is less reliable.
   const { data: { user } } = await supabase.auth.getUser()
 
-  const PUBLIC_PATHS = ["/", "/login", "/register", "/api/auth/callback"]
+  const PUBLIC_PATHS = ["/", "/login", "/register", "/survey", "/api/auth/callback"]
   const path = req.nextUrl.pathname
 
   if (!PUBLIC_PATHS.includes(path) && !user) {

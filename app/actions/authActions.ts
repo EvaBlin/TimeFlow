@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { ensureAppUser } from "@/lib/appBootstrap";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 
@@ -21,7 +22,8 @@ export async function loginAction(formData: FormData): Promise<void> {
 
     await ensureAppUser(data.user);
     redirect("/dashboard");
-  } catch {
+  } catch (error) {
+    if (isRedirectError(error)) throw error;
     redirect(`/login?error=${encodeURIComponent("Сервис временно недоступен. Попробуйте еще раз.")}`);
   }
 
@@ -57,8 +59,9 @@ export async function registerAction(formData: FormData): Promise<void> {
       await ensureAppUser(data.user);
     }
 
-    redirect("/survey");
-  } catch {
+    redirect("/dashboard");
+  } catch (error) {
+    if (isRedirectError(error)) throw error;
     redirect(`/register?error=${encodeURIComponent("Сервис временно недоступен. Попробуйте еще раз.")}`);
   }
 }
