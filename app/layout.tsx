@@ -3,6 +3,8 @@ import type { ReactNode } from "react";
 import "./globals.css";
 import { AuthHeader } from "@/components/auth/AuthHeader";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "TimeFlow",
   description: "Персонализированная платформа тайм-менеджмента"
