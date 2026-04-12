@@ -14,7 +14,7 @@ type UpdateTaskBody = {
 };
 
 async function getCurrentUserId(): Promise<string | null> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const {
     data: { user }
   } = await supabase.auth.getUser();
