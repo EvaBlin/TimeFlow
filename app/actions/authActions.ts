@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { ensureAppUser } from "@/lib/appBootstrap";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
+import { createTwentyLead } from "@/lib/twenty";
 
 export async function loginAction(formData: FormData): Promise<void> {
   try {
@@ -57,6 +58,15 @@ export async function registerAction(formData: FormData): Promise<void> {
 
     if (data.user) {
       await ensureAppUser(data.user);
+      
+      try {
+        await createTwentyLead({
+          email: { primaryEmail: email },
+          name: email.split("@")[0]
+        });
+      } catch (crmError) {
+        console.error("Ошибка при создании лида в CRM:", crmError);
+      }
     }
 
     redirect("/dashboard");

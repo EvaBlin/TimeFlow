@@ -4,6 +4,23 @@ export type TaskPriority = "low" | "medium" | "high";
 
 export type TaskStatus = "todo" | "in_progress" | "done" | "archived";
 
+export interface TwentyEmailObject {
+  primaryEmail: string;
+  additionalEmails?: string[];
+}
+
+export interface TwentyAppUserBase {
+  email: TwentyEmailObject; 
+  name?: string;
+  focus?: number;
+  energy?: number;
+  selfControl?: number;
+  creativity?: number;
+}
+
+export type TwentyCreateDTO = Pick<TwentyAppUserBase, "email" | "name">;
+export type TwentyUpdateDTO = Omit<TwentyAppUserBase, "name">;
+
 export interface Profile {
   focus: number;
   energy: number;

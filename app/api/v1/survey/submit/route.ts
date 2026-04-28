@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { ensureAppUser } from "@/lib/appBootstrap";
 import { prisma } from "@/lib/prisma";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
+import { updateTwentyUser } from "@/lib/twenty";
 
 export const dynamic = "force-dynamic";
 
@@ -19,14 +20,14 @@ const metricMap: Record<string, MetricKey> = {
   creativity: "creativity"
 };
 
-const clamp1to10 = (value: number): number => Math.max(1, Math.min(10, Math.round(value)));
+const toPercentage = (avg: number): number => {
+  return Math.max(0, Math.min(100, Math.round(avg)));
+};
 
 export async function POST(req: Request) {
   try {
     const supabase = await createSupabaseServerClient();
-    const {
-      data: { user }
-    } = await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -46,7 +47,6 @@ export async function POST(req: Request) {
     });
 
     const answerById = new Map(answers.map((a) => [a.id, a]));
-
     const metricBuckets: Record<MetricKey, number[]> = {
       focus: [],
       energy: [],
@@ -61,9 +61,8 @@ export async function POST(req: Request) {
       }
 
       const metric = metricMap[answer.question.targetMetric];
-      if (!metric) {
-        throw new Error("Unsupported target metric");
-      }
+      if (!metric) throw new Error("Unsupported target metric");
+      
       metricBuckets[metric].push(answer.scoreValue);
 
       return {
@@ -76,49 +75,52 @@ export async function POST(req: Request) {
     await prisma.$transaction(async (tx) => {
       for (const row of rowsToUpsert) {
         await tx.userSurveyResult.upsert({
-          where: {
-            userId_questionId: {
-              userId: row.userId,
-              questionId: row.questionId
-            }
-          },
-          create: {
-            userId: row.userId,
-            questionId: row.questionId,
-            answerId: row.answerId
-          },
-          update: {
-            answerId: row.answerId,
-            completedAt: new Date()
-          }
+          where: { userId_questionId: { userId: row.userId, questionId: row.questionId } },
+          create: { userId: row.userId, questionId: row.questionId, answerId: row.answerId },
+          update: { answerId: row.answerId, completedAt: new Date() }
         });
       }
 
-      const toMetricValue = (values: number[]): number => {
-        if (!values.length) return 5;
+      const calculateFinalMetric = (values: number[]): number => {
+        if (!values.length) return 50; // Дефолт 50%
         const avg = values.reduce((sum, v) => sum + v, 0) / values.length;
-        return clamp1to10(avg);
+        return toPercentage(avg);
       };
 
       await tx.profile.upsert({
         where: { userId: user.id },
         create: {
           userId: user.id,
-          focus: toMetricValue(metricBuckets.focus),
-          energy: toMetricValue(metricBuckets.energy),
-          selfControl: toMetricValue(metricBuckets.selfControl),
-          creativity: toMetricValue(metricBuckets.creativity)
+          focus: calculateFinalMetric(metricBuckets.focus),
+          energy: calculateFinalMetric(metricBuckets.energy),
+          selfControl: calculateFinalMetric(metricBuckets.selfControl),
+          creativity: calculateFinalMetric(metricBuckets.creativity)
         },
         update: {
-          focus: toMetricValue(metricBuckets.focus),
-          energy: toMetricValue(metricBuckets.energy),
-          selfControl: toMetricValue(metricBuckets.selfControl),
-          creativity: toMetricValue(metricBuckets.creativity)
+          focus: calculateFinalMetric(metricBuckets.focus),
+          energy: calculateFinalMetric(metricBuckets.energy),
+          selfControl: calculateFinalMetric(metricBuckets.selfControl),
+          creativity: calculateFinalMetric(metricBuckets.creativity)
         }
       });
     });
 
     const profile = await prisma.profile.findUnique({ where: { userId: user.id } });
+
+    if (user.email && profile) {
+      try {
+        await updateTwentyUser({
+          email: { primaryEmail: user.email },
+          focus: profile.focus,
+          energy: profile.energy,
+          selfControl: profile.selfControl,
+          creativity: profile.creativity
+        });
+      } catch (crmError) {
+        console.error("CRM Sync Error:", crmError);
+      }
+    }
+
     return NextResponse.json({ success: true, profile });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Survey submit failed";
