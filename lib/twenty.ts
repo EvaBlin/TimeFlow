@@ -16,6 +16,7 @@ export async function createTwentyLead(data: TwentyCreateDTO) {
 
 export async function updateTwentyUser(data: TwentyUpdateDTO) {
   console.log(data);
+  console.log(JSON.stringify(data));
 
   const searchResponse = await fetch(`${BASE_URL}/appUsers?filter[email][primaryEmail][eq]=${data.email.primaryEmail}`, {
     headers: { 'Authorization': `Bearer ${API_KEY}` }
@@ -23,7 +24,6 @@ export async function updateTwentyUser(data: TwentyUpdateDTO) {
   const searchResult = await searchResponse.json();
   const existingRecord = searchResult.data?.appUsers?.[0];
 
-  console.log(searchResult);
 
   if (existingRecord?.id) {
     const response = await fetch(`${BASE_URL}/appUsers/${existingRecord.id}`, {
@@ -34,8 +34,5 @@ export async function updateTwentyUser(data: TwentyUpdateDTO) {
       },
       body: JSON.stringify(data)
     });
-
-    console.log(response.status);
-    console.log(response.body);
   }
 }
