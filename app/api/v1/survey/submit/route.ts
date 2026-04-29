@@ -111,10 +111,10 @@ export async function POST(req: Request) {
       try {
         await updateTwentyUser({
           email: { primaryEmail: user.email },
-          focus: profile.focus,
-          energy: profile.energy,
-          selfControl: profile.selfControl,
-          creativity: profile.creativity
+          focus: profile.focus / 10,
+          energy: profile.energy / 10,
+          selfControl: profile.selfControl / 10,
+          creativity: profile.creativity / 10
         });
       } catch (crmError) {
         console.error("CRM Sync Error:", crmError);
