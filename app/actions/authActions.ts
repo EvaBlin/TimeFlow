@@ -72,6 +72,7 @@ export async function registerAction(formData: FormData): Promise<void> {
     redirect("/dashboard");
   } catch (error) {
     if (isRedirectError(error)) throw error;
+    console.log(error);
     redirect(`/register?error=${encodeURIComponent("Сервис временно недоступен. Попробуйте еще раз.")}`);
   }
 }
