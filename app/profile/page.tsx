@@ -90,7 +90,7 @@ export default async function ProfilePage(): Promise<JSX.Element> {
                     <span className="font-medium text-textMain">{score}/10</span>
                   </div>
                   <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-100">
-                    <div className="h-2 rounded-full bg-neutral-800" style={{ width: `${score}%` }} />
+                    <div className="h-2 rounded-full bg-neutral-800" style={{ width: `${score * 10}%` }} />
                   </div>
                 </div>
               );

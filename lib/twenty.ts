@@ -21,7 +21,7 @@ export async function updateTwentyUser(data: TwentyUpdateDTO) {
     headers: { 'Authorization': `Bearer ${API_KEY}` }
   });
   const searchResult = await searchResponse.json();
-  const existingRecord = searchResult.data?.[0];
+  const existingRecord = searchResult.data?.appUsers?.[0];
 
   console.log(searchResult);
 
