@@ -17,7 +17,7 @@ export async function createTwentyLead(data: TwentyCreateDTO) {
 export async function updateTwentyUser(data: TwentyUpdateDTO) {
   console.log(data);
 
-  const searchResponse = await fetch(`${BASE_URL}/app-users?filter[email][primaryEmail][eq]=${data.email.primaryEmail}`, {
+  const searchResponse = await fetch(`${BASE_URL}/appUsers?filter[email][primaryEmail][eq]=${data.email.primaryEmail}`, {
     headers: { 'Authorization': `Bearer ${API_KEY}` }
   });
   const searchResult = await searchResponse.json();
