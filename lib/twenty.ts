@@ -26,7 +26,7 @@ export async function updateTwentyUser(data: TwentyUpdateDTO) {
   console.log(searchResult);
 
   if (existingRecord?.id) {
-    return await fetch(`${BASE_URL}/appUsers/${existingRecord.id}`, {
+    const response = await fetch(`${BASE_URL}/appUsers/${existingRecord.id}`, {
       method: 'PATCH',
       headers: {
         'Authorization': `Bearer ${API_KEY}`,
@@ -34,5 +34,8 @@ export async function updateTwentyUser(data: TwentyUpdateDTO) {
       },
       body: JSON.stringify(data)
     });
+
+    console.log(response.status);
+    console.log(response.body);
   }
 }

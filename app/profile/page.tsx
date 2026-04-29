@@ -81,14 +81,13 @@ export default async function ProfilePage(): Promise<JSX.Element> {
               ["Самоконтроль", profile.selfControl],
               ["Креативность", profile.creativity]
             ].map(([label, value]) => {
-              const score = Math.max(0, Math.min(100, Number(value)));
-              const displayScore = Math.round(score / 10);
+              const score = Number(value)
 
               return (
                 <div key={String(label)} className="rounded-2xl border border-slate-200 bg-surface p-5">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-textMuted">{String(label)}</span>
-                    <span className="font-medium text-textMain">{displayScore}/10</span>
+                    <span className="font-medium text-textMain">{score}/10</span>
                   </div>
                   <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-100">
                     <div className="h-2 rounded-full bg-neutral-800" style={{ width: `${score}%` }} />
